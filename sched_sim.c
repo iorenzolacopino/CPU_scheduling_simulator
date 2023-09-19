@@ -5,12 +5,13 @@
 
 FakeOS os;
 
+// cpu scheduling based on shortest job first policy
 typedef struct {
   int quantum;
-} SchedRRArgs;
+} SchedSJFArgs;
 
-void schedRR(FakeOS* os, void* args_){
-  SchedRRArgs* args=(SchedRRArgs*)args_;
+void schedSJF(FakeOS* os, void* args_){
+  SchedSJFArgs* args=(SchedSJFArgs*)args_;
 
   // look for the first process in ready
   // if none, return
@@ -40,10 +41,13 @@ void schedRR(FakeOS* os, void* args_){
 
 int main(int argc, char** argv) {
   FakeOS_init(&os);
-  SchedRRArgs srr_args;
-  srr_args.quantum=5;
+  SchedSJFArgs srr_args;
+  int quantum;
+  printf("insert quantum time: ");
+  scanf("%d", &quantum);
+  srr_args.quantum=quantum;
   os.schedule_args=&srr_args;
-  os.schedule_fn=schedRR;
+  os.schedule_fn=schedSJF;
   
   for (int i=1; i<argc; ++i){
     FakeProcess new_process;
