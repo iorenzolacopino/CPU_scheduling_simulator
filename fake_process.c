@@ -22,16 +22,21 @@ int FakeProcess_load(FakeProcess* p, const char* filename) {
     int arrival_time=-1;
     int num_tokens=0;
     int duration=-1;
+    int temp=-1;
 
-    num_tokens=sscanf(buffer, "PROCESS %d %d", &pid, &arrival_time);
-    if (num_tokens==2 && p->pid<0){
+    num_tokens=sscanf(buffer, "PROCESS\t%d", &pid);
+    if (num_tokens==1 && p->pid<0){
       p->pid=pid;
+      goto next_round;
+    }
+    num_tokens=sscanf(buffer, "Tstart\t%d", &arrival_time);
+    if (num_tokens==1){
       p->arrival_time=arrival_time;
       goto next_round;
     }
-    num_tokens=sscanf(buffer, "CPU_BURST %d", &duration);
-    if (num_tokens==1){
-      // we create a new event of type cpu burst
+    num_tokens=sscanf(buffer, "CPU burst %d\t%d", &temp, &duration);
+    if (num_tokens==2){
+      // we create a new event of type CPU burst
       ProcessEvent* e=(ProcessEvent*) malloc(sizeof(ProcessEvent));
       e->list.prev=e->list.next=0;
       e->type=CPU;
@@ -40,9 +45,9 @@ int FakeProcess_load(FakeProcess* p, const char* filename) {
       ++num_events;
       goto next_round;
     }
-    num_tokens=sscanf(buffer, "IO_BURST %d", &duration);
-    if (num_tokens==1){
-      // we create a new event of type cpu burst
+    num_tokens=sscanf(buffer, "IO burst %d\t%d", &temp, &duration);
+    if (num_tokens==2){
+      // we create a new event of type IO burst
       ProcessEvent* e=(ProcessEvent*) malloc(sizeof(ProcessEvent));
       e->list.prev=e->list.next=0;
       e->type=IO;

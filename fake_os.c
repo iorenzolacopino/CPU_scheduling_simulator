@@ -163,9 +163,30 @@ void FakeOS_simStep(FakeOS* os){
   }
 
   // if running not defined and ready queue not empty
-  // put the first in ready to run
+  // put the process with less CPU burst in ready to run
   if (! os->running && os->ready.first) {
-    os->running=(FakePCB*) List_popFront(&os->ready);
+    aux=os->ready.first;
+    int min=999; // we assume that MAX_INT = 999
+    int i=0, c=-1;
+    while (aux){
+      FakePCB* pcb=(FakePCB*)aux;
+      aux=aux->next;
+      ProcessEvent* e=(ProcessEvent*) pcb->events.first;
+      if (e->duration<min){
+        min=e->duration;
+        c=i;
+      }
+      i++;
+    }
+    if (c==0) os->running=(FakePCB*) List_popFront(&os->ready);
+    else{
+      aux=os->ready.first->next;
+      i=1;
+      while (1){
+        if (i==c) List_detach(&os->running, (FakePCB*)aux);
+      }
+    }
+    // os->running=(FakePCB*) List_popFront(&os->ready);
   }
 
   ++os->timer;
