@@ -1,0 +1,6 @@
+PROCESS 1
+Tstart  0
+CPU burst 1 5
+IO burst 1  5
+CPU burst 2 3
+IO burst 2  1
