@@ -18,24 +18,43 @@ void schedSJF(FakeOS* os, void* args_){
   if (! os->ready.first)
     return;
 
-  FakePCB* pcb=(FakePCB*) List_popFront(&os->ready);
-  os->running=pcb;
-  
-  assert(pcb->events.first);
-  ProcessEvent* e = (ProcessEvent*)pcb->events.first;
-  assert(e->type==CPU);
+  FakePCB* sjf=0;
+  int min=999; // we assume that INT_MAX = 999
+
+  ListItem *aux=os->ready.first;
+  while (aux){
+    FakePCB *pcb=(FakePCB*)aux;
+    assert(pcb->events.first);
+    ProcessEvent *e=(ProcessEvent*)pcb->events.first;
+    assert(e->type==CPU);
+
+    if (e->duration<min){
+      sjf=pcb;
+      min=e->duration;
+    }
+    
+    aux = aux->next;
+  }
+
+  // if cpu burst time is smaller than min
+  // put the process in front of the list
+  if (sjf){
+    List_detach(&os->ready, (ListItem*)sjf);
+    List_pushFront(&os->ready, (ListItem*)sjf);
+  }
 
   // look at the first event
   // if duration>quantum
   // push front in the list of event a CPU event of duration quantum
   // alter the duration of the old event subtracting quantum
-  if (e->duration>args->quantum) {
-    ProcessEvent* qe=(ProcessEvent*)malloc(sizeof(ProcessEvent));
+  ProcessEvent *e=(ProcessEvent*)sjf->events.first;
+  if (e->duration>args->quantum){
+    ProcessEvent *qe=(ProcessEvent*)malloc(sizeof(ProcessEvent));
     qe->list.prev=qe->list.next=0;
     qe->type=CPU;
     qe->duration=args->quantum;
     e->duration-=args->quantum;
-    List_pushFront(&pcb->events, (ListItem*)qe);
+    List_pushFront(&sjf->events, (ListItem*)qe);
   }
 };
 
