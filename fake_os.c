@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
+#include <unistd.h>
 
 #include "fake_os.h"
 
@@ -64,10 +65,11 @@ void FakeOS_createProcess(FakeOS* os, FakeProcess* p) {
 void FakeOS_simStep(FakeOS* os){
   
   printf("************** TIME: %08d **************\n", os->timer);
+  ListItem *aux;
 
   //scan process waiting to be started
   //and create all processes starting now
-  ListItem* aux=os->processes.first;
+  aux=os->processes.first;
   while (aux){
     FakeProcess* proc=(FakeProcess*)aux;
     FakeProcess* new_process=0;
@@ -163,32 +165,12 @@ void FakeOS_simStep(FakeOS* os){
   }
 
   // if running not defined and ready queue not empty
-  // put the process with less CPU burst in ready to run
+  // put the first in ready to run
   if (! os->running && os->ready.first) {
-    aux=os->ready.first;
-    int min=999; // we assume that MAX_INT = 999
-    int i=0, c=-1;
-    while (aux){
-      FakePCB* pcb=(FakePCB*)aux;
-      aux=aux->next;
-      ProcessEvent* e=(ProcessEvent*) pcb->events.first;
-      if (e->duration<min){
-        min=e->duration;
-        c=i;
-      }
-      i++;
-    }
-    if (c==0) os->running=(FakePCB*) List_popFront(&os->ready);
-    else{
-      aux=os->ready.first->next;
-      i=1;
-      while (1){
-        if (i==c) List_detach(&os->running, (FakePCB*)aux);
-      }
-    }
-    // os->running=(FakePCB*) List_popFront(&os->ready);
+    os->running=(FakePCB*) List_popFront(&os->ready);
   }
 
+  sleep(1);
   ++os->timer;
 
 }
