@@ -13,6 +13,14 @@ typedef struct {
 void schedSJF(FakeOS* os, void* args_){
   SchedSJFArgs* args=(SchedSJFArgs*)args_;
 
+  if (os->running){
+    assert(os->running->events.first);
+    ProcessEvent *e=(ProcessEvent*)os->running->events.first;
+    assert(e->type==CPU);
+    List_pushFront(&os->ready, (ListItem*)os->running);
+    os->running=0;
+  }
+
   // look for the first process in ready
   // if none, return
   if (! os->ready.first)
@@ -64,6 +72,7 @@ int main(int argc, char** argv) {
   int quantum;
   printf("insert quantum time: ");
   scanf("%d", &quantum);
+  assert(quantum>0);
   srr_args.quantum=quantum;
   os.schedule_args=&srr_args;
   os.schedule_fn=schedSJF;
