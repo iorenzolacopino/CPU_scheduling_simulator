@@ -1,6 +1,7 @@
 #include "fake_process.h"
 #include "linked_list.h"
 #pragma once
+#define MAX_NUM_PROCESSES 2
 
 
 typedef struct {
@@ -13,7 +14,7 @@ struct FakeOS;
 typedef void (*ScheduleFn)(struct FakeOS* os, void* args);
 
 typedef struct FakeOS{
-  FakePCB* running;
+  FakePCB** running;
   ListHead ready;
   ListHead waiting;
   int timer;
@@ -26,3 +27,4 @@ typedef struct FakeOS{
 void FakeOS_init(FakeOS* os);
 void FakeOS_simStep(FakeOS* os);
 void FakeOS_destroy(FakeOS* os);
+int FakeOS_isRunning(FakeOS *os);

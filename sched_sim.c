@@ -8,17 +8,20 @@ FakeOS os;
 // cpu scheduling based on shortest job first policy
 typedef struct {
   int quantum;
+  float a;
 } SchedSJFArgs;
 
 void schedSJF(FakeOS* os, void* args_){
   SchedSJFArgs* args=(SchedSJFArgs*)args_;
 
-  if (os->running){
-    assert(os->running->events.first);
-    ProcessEvent *e=(ProcessEvent*)os->running->events.first;
-    assert(e->type==CPU);
-    List_pushFront(&os->ready, (ListItem*)os->running);
-    os->running=0;
+  for (int i=0; i<MAX_NUM_PROCESSES; i++){
+    if (os->running[i]){
+	  assert(os->running[i]->events.first);
+	  ProcessEvent *e=(ProcessEvent*)os->running[i]->events.first;
+	  assert(e->type==CPU);
+	  List_pushFront(&os->ready, (ListItem*)os->running[i]);
+	  os->running[i]=0;
+    }
   }
 
   // look for the first process in ready
@@ -73,7 +76,12 @@ int main(int argc, char** argv) {
   printf("insert quantum time: ");
   scanf("%d", &quantum);
   assert(quantum>0);
+  float a;
+  printf("insert alpha constant: ");
+  scanf("%f", &a);
+  assert(a>=0 && a<=1);
   srr_args.quantum=quantum;
+  srr_args.a=a;
   os.schedule_args=&srr_args;
   os.schedule_fn=schedSJF;
   
@@ -89,7 +97,7 @@ int main(int argc, char** argv) {
     }
   }
   printf("num processes in queue %d\n", os.processes.size);
-  while(os.running
+  while(FakeOS_isRunning(&os)
         || os.ready.first
         || os.waiting.first
         || os.processes.first){
