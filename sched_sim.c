@@ -14,59 +14,54 @@ typedef struct {
 void schedSJF(FakeOS* os, void* args_){
   SchedSJFArgs* args=(SchedSJFArgs*)args_;
 
-  for (int i=0; i<MAX_NUM_PROCESSES; i++){
-    if (os->running[i]){
-	  assert(os->running[i]->events.first);
-	  ProcessEvent *e=(ProcessEvent*)os->running[i]->events.first;
-	  assert(e->type==CPU);
-	  List_pushFront(&os->ready, (ListItem*)os->running[i]);
-	  os->running[i]=0;
-    }
-  }
-
   // look for the first process in ready
   // if none, return
   if (! os->ready.first)
     return;
 
-  FakePCB* sjf=0;
-  int min=999; // we assume that INT_MAX = 999
+  for (int i=0; i<MAX_NUM_PROCESSES; i++){
+    if (!os->running[i]){
+      FakePCB* sjf=0;
+      float min=999; // we assume that INT_MAX = 999
 
-  ListItem *aux=os->ready.first;
-  while (aux){
-    FakePCB *pcb=(FakePCB*)aux;
-    assert(pcb->events.first);
-    ProcessEvent *e=(ProcessEvent*)pcb->events.first;
-    assert(e->type==CPU);
+      ListItem *aux=os->ready.first;
+      while (aux){
+        FakePCB *pcb=(FakePCB*)aux;
+        assert(pcb->events.first);
+        ProcessEvent *e=(ProcessEvent*)pcb->events.first;
+        assert(e->type==CPU);
+        e->bt=args->a*os->burst_time[i]+(1-args->a)*e->bt;
+        if (e->bt<min){
+          sjf=pcb;
+          min=e->bt;
+        }
+        
+        aux = aux->next;
+      }
 
-    if (e->duration<min){
-      sjf=pcb;
-      min=e->duration;
+      // if cpu burst time is smaller than min
+      // put the process in front of the list
+      if (sjf){
+        List_detach(&os->ready, (ListItem*)sjf);
+        List_pushFront(&os->ready, (ListItem*)sjf);
+      }
+
+      // look at the first event
+      // if duration>quantum
+      // push front in the list of event a CPU event of duration quantum
+      // alter the duration of the old event subtracting quantum
+      ProcessEvent *e=(ProcessEvent*)sjf->events.first;
+      if (e->duration>args->quantum){
+        ProcessEvent *qe=(ProcessEvent*)malloc(sizeof(ProcessEvent));
+        qe->list.prev=qe->list.next=0;
+        qe->type=CPU;
+        qe->duration=args->quantum;
+        e->duration-=args->quantum;
+        List_pushFront(&sjf->events, (ListItem*)qe);
+      }
     }
-    
-    aux = aux->next;
   }
 
-  // if cpu burst time is smaller than min
-  // put the process in front of the list
-  if (sjf){
-    List_detach(&os->ready, (ListItem*)sjf);
-    List_pushFront(&os->ready, (ListItem*)sjf);
-  }
-
-  // look at the first event
-  // if duration>quantum
-  // push front in the list of event a CPU event of duration quantum
-  // alter the duration of the old event subtracting quantum
-  ProcessEvent *e=(ProcessEvent*)sjf->events.first;
-  if (e->duration>args->quantum){
-    ProcessEvent *qe=(ProcessEvent*)malloc(sizeof(ProcessEvent));
-    qe->list.prev=qe->list.next=0;
-    qe->type=CPU;
-    qe->duration=args->quantum;
-    e->duration-=args->quantum;
-    List_pushFront(&sjf->events, (ListItem*)qe);
-  }
 };
 
 int main(int argc, char** argv) {

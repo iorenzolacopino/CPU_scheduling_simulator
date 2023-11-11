@@ -8,6 +8,7 @@ typedef struct {
   ListItem list;
   ResourceType type;
   int duration;
+  float bt;
 } ProcessEvent;
 
 // fake process

@@ -22,6 +22,7 @@ int FakeProcess_load(FakeProcess* p, const char* filename) {
     int arrival_time=-1;
     int num_tokens=0;
     int duration=-1;
+    float bt=5; // chosen arbitrarily
     int temp=-1;
 
     num_tokens=sscanf(buffer, "PROCESS\t%d", &pid);
@@ -41,6 +42,7 @@ int FakeProcess_load(FakeProcess* p, const char* filename) {
       e->list.prev=e->list.next=0;
       e->type=CPU;
       e->duration=duration;
+      e->bt=bt;
       List_pushBack(&p->events, (ListItem*)e);
       ++num_events;
       goto next_round;
@@ -52,6 +54,7 @@ int FakeProcess_load(FakeProcess* p, const char* filename) {
       e->list.prev=e->list.next=0;
       e->type=IO;
       e->duration=duration;
+      e->bt=bt;
       List_pushBack(&p->events, (ListItem*)e);
       ++num_events;
       goto next_round;

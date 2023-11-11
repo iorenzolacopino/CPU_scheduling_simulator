@@ -10,6 +10,7 @@ void FakeOS_init(FakeOS* os) {
   List_init(&os->ready);
   List_init(&os->waiting);
   List_init(&os->processes);
+  os->burst_time=(int*)malloc(MAX_NUM_PROCESSES*sizeof(int));
   os->timer=0;
   os->schedule_fn=0;
 }
@@ -134,6 +135,7 @@ void FakeOS_simStep(FakeOS* os){
 		ProcessEvent* e=(ProcessEvent*) running->events.first;
 		assert(e->type==CPU);
 		e->duration--;
+    os->burst_time[i]++;
 		printf("\t\tremaining time:%d\n",e->duration);
 		if (e->duration==0){
 		  printf("\t\tend burst\n");
@@ -162,22 +164,34 @@ void FakeOS_simStep(FakeOS* os){
 
 
   // call schedule, if defined
-  if (os->schedule_fn){
+  if (os->schedule_fn && FakeOS_isFree(os)){
     (*os->schedule_fn)(os, os->schedule_args); 
   }
 
   // if running not defined and ready queue not empty
   // put the first in ready to run
   int i=0;
-  while (os->ready.first && i<MAX_NUM_PROCESSES) os->running[i++]=(FakePCB*) List_popFront(&os->ready);
+  while (os->ready.first && i<MAX_NUM_PROCESSES){ 
+    if (!os->running[i]){
+      os->running[i]=(FakePCB*) List_popFront(&os->ready);
+      os->burst_time[i]=0;
+    }
+    i++;
+  }
 
   ++os->timer;
 
 }
 
+int FakeOS_isFree(FakeOS *os){
+  for (int i=0; i<MAX_NUM_PROCESSES; i++)
+    if (!os->running[i]) return 1;
+  return 0;
+}
+
 int FakeOS_isRunning(FakeOS *os){
 	for (int i=0; i<MAX_NUM_PROCESSES; i++)
-		if (os->running[i]!=0) return 1;
+		if (os->running[i]) return 1;
 	return 0;
 }
 
